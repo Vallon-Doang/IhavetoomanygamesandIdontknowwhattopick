@@ -3,60 +3,59 @@
 @section('title', 'Admin overview')
 
 @section('content')
-    <h1 class="text-2xl font-bold text-white">System overview</h1>
-    <p class="mt-1 text-sm text-slate-400">Live counts from the database.</p>
-
-    <div class="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        @foreach ([
-            'Registered users' => $counts['users'],
-            'Members' => $counts['members'],
-            'Admins' => $counts['admins'],
-            'Games (catalog)' => $counts['games'],
-        ] as $label => $value)
-            <div class="rounded-xl border border-slate-800 bg-slate-900/50 p-5">
-                <div class="text-sm text-slate-400">{{ $label }}</div>
-                <div class="mt-1 text-3xl font-bold text-white">{{ $value }}</div>
-            </div>
-        @endforeach
-    </div>
-
-    <div class="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        @foreach ([
-            'Ownership rows' => $counts['ownerships'],
-            'Spins recorded' => $counts['spins'],
-            'Steam accounts linked' => $counts['linkedSteam'],
-        ] as $label => $value)
-            <div class="rounded-xl border border-slate-800 bg-slate-900/50 p-5">
-                <div class="text-sm text-slate-400">{{ $label }}</div>
-                <div class="mt-1 text-3xl font-bold text-white">{{ $value }}</div>
-            </div>
-        @endforeach
-        <div class="rounded-xl border border-slate-800 bg-slate-900/50 p-5">
-            <div class="text-sm text-slate-400">Sync runs</div>
-            <div class="mt-1 text-lg">
-                <span class="font-bold text-emerald-400">{{ $syncCounts['success'] }}</span> success ·
-                <span class="font-bold text-red-400">{{ $syncCounts['failed'] }}</span> failed
-            </div>
+    <div class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold tracking-tight text-white">System overview</h1>
+            <p class="mt-1 text-sm text-slate-400">Live counts from the database.</p>
+        </div>
+        <div class="flex flex-wrap gap-3">
+            <x-ui.button :href="route('admin.users.index')" variant="secondary" size="sm">Manage users</x-ui.button>
+            <x-ui.button :href="route('admin.games.index')" variant="secondary" size="sm">Game catalog</x-ui.button>
+            <x-ui.button :href="route('admin.syncs.index')" variant="secondary" size="sm">Sync activity</x-ui.button>
         </div>
     </div>
 
-    <div class="mt-8 flex flex-wrap gap-3">
-        <a href="{{ route('admin.users.index') }}" class="rounded-lg bg-slate-700 px-4 py-2 text-sm text-white hover:bg-slate-600">Manage users</a>
-        <a href="{{ route('admin.games.index') }}" class="rounded-lg bg-slate-700 px-4 py-2 text-sm text-white hover:bg-slate-600">Game catalog</a>
-        <a href="{{ route('admin.syncs.index') }}" class="rounded-lg bg-slate-700 px-4 py-2 text-sm text-white hover:bg-slate-600">Sync activity</a>
+    <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <x-ui.stat label="Registered users" :value="$counts['users']" />
+        <x-ui.stat label="Members" :value="$counts['members']" />
+        <x-ui.stat label="Admins" :value="$counts['admins']" />
+        <x-ui.stat label="Games (catalog)" :value="$counts['games']" />
     </div>
 
-    <section class="mt-10">
-        <h2 class="font-semibold text-white">Latest sync runs</h2>
+    <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <x-ui.stat label="Ownership rows" :value="$counts['ownerships']" />
+        <x-ui.stat label="Spins recorded" :value="$counts['spins']" />
+        <x-ui.stat label="Steam accounts linked" :value="$counts['linkedSteam']" />
+        <div class="rounded-2xl border border-white/5 bg-abyss-900/60 p-5">
+            <p class="text-xs font-medium uppercase tracking-wider text-slate-400">Sync runs</p>
+            <p class="mt-2 flex items-baseline gap-2 text-2xl font-semibold">
+                <span class="text-emerald-400">{{ $syncCounts['success'] }}</span>
+                <span class="text-xs font-normal text-slate-500">success</span>
+                <span class="text-red-400">{{ $syncCounts['failed'] }}</span>
+                <span class="text-xs font-normal text-slate-500">failed</span>
+            </p>
+        </div>
+    </div>
+
+    <section class="mt-8">
+        <div class="flex items-center justify-between">
+            <h2 class="font-semibold text-white">Latest sync runs</h2>
+            <a href="{{ route('admin.syncs.index') }}" class="text-sm text-accent-400 hover:text-accent-300">View all</a>
+        </div>
+
         @if ($recentSyncs->isEmpty())
-            <p class="mt-3 text-sm text-slate-400">No synchronization has been attempted yet.</p>
+            <p class="mt-3 rounded-2xl border border-dashed border-white/10 bg-abyss-900/40 p-6 text-center text-sm text-slate-400">
+                No synchronization has been attempted yet.
+            </p>
         @else
-            <ul class="mt-3 divide-y divide-slate-800 rounded-xl border border-slate-800">
+            <ul class="mt-3 divide-y divide-white/5 overflow-hidden rounded-2xl border border-white/5">
                 @foreach ($recentSyncs as $run)
-                    <li class="flex items-center justify-between gap-4 px-4 py-3 text-sm">
-                        <span class="text-slate-200">{{ $run->user?->name ?? 'Unknown user' }}</span>
-                        <span class="text-slate-500">{{ $run->created_at->diffForHumans() }}</span>
-                        @include('admin.partials.sync-status', ['status' => $run->status])
+                    <li class="flex items-center justify-between gap-4 bg-abyss-900/40 px-4 py-3 text-sm">
+                        <span class="truncate text-slate-200">{{ $run->user?->name ?? 'Unknown user' }}</span>
+                        <div class="flex items-center gap-3">
+                            <span class="text-slate-500">{{ $run->created_at->diffForHumans() }}</span>
+                            @include('admin.partials.sync-status', ['status' => $run->status])
+                        </div>
                     </li>
                 @endforeach
             </ul>

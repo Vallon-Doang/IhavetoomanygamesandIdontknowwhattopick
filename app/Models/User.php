@@ -61,4 +61,19 @@ class User extends Authenticatable
     {
         return $this->hasMany(SteamSyncRun::class);
     }
+
+    public function posts(): HasMany
+    {
+        return $this->hasMany(Post::class);
+    }
+
+    public function announcements(): HasMany
+    {
+        return $this->hasMany(Announcement::class);
+    }
+
+    public function steamResetRequests(): HasMany
+    {
+        return $this->hasMany(SteamResetRequest::class);
+    }
 }

@@ -44,8 +44,15 @@ class SteamController extends Controller
             ->exists();
 
         if ($conflict) {
-            return redirect()->route('dashboard')->with('error', 'That Steam account is already linked to another GameSpin user.');
+            $request->session()->put('steam_conflict', $steamId);
+
+            return redirect()->route('dashboard')->with(
+                'error',
+                'That Steam account is already linked to another GameSpin user. If this is unexpected, you can request a reset from your dashboard.'
+            );
         }
+
+        $request->session()->forget('steam_conflict');
 
         $account = SteamAccount::updateOrCreate(
             ['user_id' => $user->id],

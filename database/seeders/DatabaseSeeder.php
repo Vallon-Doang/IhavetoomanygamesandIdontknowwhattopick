@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             DemoUserSeeder::class,
             GameSeeder::class,
             SpinHistorySeeder::class,
+            CommunitySeeder::class,
         ]);
     }
 }

@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Game;
 use App\Models\User;
 use App\Models\UserGame;
+use App\Services\GamePickerService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -77,6 +78,26 @@ class PickerTest extends TestCase
             ->assertRedirect(route('picker.index'));
 
         $this->assertDatabaseHas('spin_history', ['user_id' => $user->id, 'game_name' => 'Portal 2']);
+    }
+
+    public function test_spin_flashes_a_reel_that_lands_on_the_winner(): void
+    {
+        $user = User::factory()->create();
+        $this->own($user, 'Portal 2');
+        $this->own($user, 'Terraria');
+
+        $this->actingAs($user)
+            ->post('/picker/spin', [])
+            ->assertSessionHas('picked', function (array $picked): bool {
+                $this->assertCount(GamePickerService::REEL_LENGTH, $picked['reel']);
+                $this->assertSame(GamePickerService::REEL_WINNER_INDEX, $picked['winner_index']);
+                $this->assertSame(
+                    $picked['name'],
+                    $picked['reel'][GamePickerService::REEL_WINNER_INDEX]['name'],
+                );
+
+                return true;
+            });
     }
 
     public function test_member_cannot_toggle_another_members_exclusion(): void

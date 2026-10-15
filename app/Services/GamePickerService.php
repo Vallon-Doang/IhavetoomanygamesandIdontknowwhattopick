@@ -6,9 +6,14 @@ use App\Models\SpinHistory;
 use App\Models\User;
 use App\Models\UserGame;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 
 class GamePickerService
 {
+    public const REEL_LENGTH = 60;
+
+    public const REEL_WINNER_INDEX = 55;
+
     /**
      * Build the query of games eligible for a pick.
      *
@@ -68,5 +73,57 @@ class GamePickerService
         ]);
 
         return $snapshot ?: null;
+    }
+
+    /**
+     * All eligible catalog games for the member, used to populate the reel.
+     *
+     * @param  array{search?: string|null, min_playtime?: int|null, max_playtime?: int|null}  $filters
+     * @return Collection<int, \App\Models\Game>
+     */
+    public function eligibleGames(User $user, array $filters = []): Collection
+    {
+        return $this->eligibleQuery($user, $filters)
+            ->with('game')
+            ->get()
+            ->pluck('game')
+            ->filter()
+            ->values();
+    }
+
+    /**
+     * Build the roulette reel: a random strip of covers with the server-chosen
+     * winner placed at a fixed index so the animation can land on it exactly.
+     *
+     * @param  Collection<int, \App\Models\Game>  $games
+     * @return array{items: array<int, array{id: int, name: string, cover: string|null}>, winner_index: int}
+     */
+    public function buildReel(Collection $games, int $winnerId, string $winnerName, ?string $winnerCover): array
+    {
+        $pool = $games->map(fn ($game) => [
+            'id' => $game->id,
+            'name' => $game->name,
+            'cover' => $game->cover_url,
+        ])->all();
+
+        if ($pool === []) {
+            $pool = [['id' => $winnerId, 'name' => $winnerName, 'cover' => $winnerCover]];
+        }
+
+        $items = [];
+        for ($i = 0; $i < self::REEL_LENGTH; $i++) {
+            $items[] = $pool[array_rand($pool)];
+        }
+
+        $items[self::REEL_WINNER_INDEX] = [
+            'id' => $winnerId,
+            'name' => $winnerName,
+            'cover' => $winnerCover,
+        ];
+
+        return [
+            'items' => $items,
+            'winner_index' => self::REEL_WINNER_INDEX,
+        ];
     }
 }

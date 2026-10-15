@@ -6,4 +6,96 @@
 @theme {
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
+
+    /* GameSpin navy/charcoal surfaces */
+    --color-abyss-950: #060a12;
+    --color-abyss-900: #0a1120;
+    --color-abyss-850: #0d1626;
+    --color-abyss-800: #111c30;
+    --color-abyss-700: #1a2946;
+    --color-abyss-600: #263a5e;
+    --color-abyss-500: #3d5688;
+
+    /* Restrained cyan accents */
+    --color-accent-300: #7fd8fb;
+    --color-accent-400: #38bdf8;
+    --color-accent-500: #0ea5e9;
+    --color-accent-600: #0284c7;
+}
+
+@layer base {
+    html {
+        -webkit-tap-highlight-color: transparent;
+        scroll-behavior: smooth;
+    }
+
+    body {
+        background-color: #060a12;
+        background-image:
+            radial-gradient(1100px 520px at 50% -12%, rgba(56, 189, 248, 0.12), transparent 62%),
+            radial-gradient(900px 520px at 100% -6%, rgba(37, 99, 235, 0.10), transparent 55%);
+        background-attachment: fixed;
+        color: #e2e8f0;
+    }
+
+    ::selection {
+        background: rgba(56, 189, 248, 0.3);
+        color: #ffffff;
+    }
+
+    * {
+        scrollbar-color: #1a2946 transparent;
+        scrollbar-width: thin;
+    }
+
+    *::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+    }
+
+    *::-webkit-scrollbar-thumb {
+        background: #1a2946;
+        border: 2px solid #060a12;
+        border-radius: 9999px;
+    }
+
+    *::-webkit-scrollbar-thumb:hover {
+        background: #263a5e;
+    }
+}
+
+@layer components {
+    /* Cover-art surfaces keep a consistent inner edge highlight */
+    .cover-frame {
+        box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
+    }
+
+    .gamespin-win {
+        animation: gamespin-win-pulse 1.6s ease-out infinite;
+    }
+}
+
+@keyframes gamespin-win-pulse {
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.55), 0 0 22px 4px rgba(56, 189, 248, 0.30);
+    }
+    50% {
+        box-shadow: 0 0 0 6px rgba(56, 189, 248, 0), 0 0 36px 10px rgba(56, 189, 248, 0.50);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+[x-cloak] {
+    display: none !important;
 }

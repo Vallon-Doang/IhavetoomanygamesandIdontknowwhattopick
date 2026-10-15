@@ -3,75 +3,230 @@
 @section('title', 'Roulette')
 
 @section('content')
-    <div class="mx-auto max-w-2xl"
-        x-data="{
-            spinning: false,
-            result: null,
-            names: @js($eligibleCount > 0 ? 'spinning…' : 'no eligible games'),
-        }">
-        <h1 class="text-2xl font-bold text-white">GameSpin roulette</h1>
-        <p class="mt-1 text-sm text-slate-400">
-            {{ $eligibleCount }} eligible game{{ $eligibleCount === 1 ? '' : 's' }} in your library right now.
-        </p>
+    @php
+        $picked = session('picked');
+        $appliedFilters = $picked['filters'] ?? [];
+        $rouletteConfig = [
+            'picked' => $picked,
+        ];
+    @endphp
 
-        @if (session('picked'))
-            @php($picked = session('picked'))
-            <div class="mt-6 rounded-xl border border-indigo-700 bg-indigo-950/50 p-8 text-center">
-                <p class="text-sm uppercase tracking-wide text-indigo-300">Your game is</p>
-                <p class="mt-2 text-3xl font-extrabold text-white">{{ $picked['name'] }}</p>
-                @if (! empty($picked['filters']))
-                    <p class="mt-3 text-xs text-slate-400">
-                        Filters applied:
-                        @foreach ($picked['filters'] as $key => $value)
-                            <span class="mr-2 rounded bg-slate-800 px-2 py-0.5">{{ $key }}: {{ $value }}</span>
-                        @endforeach
-                    </p>
-                @endif
-                <div class="mt-6 flex justify-center gap-3">
-                    <a href="{{ route('history.index') }}" class="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:border-slate-500">View history</a>
-                    <a href="{{ route('library.index') }}" class="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:border-slate-500">Library</a>
+    <div class="mx-auto max-w-5xl" x-data="rouletteRig(@js($rouletteConfig))" x-init="boot()">
+        <div class="flex flex-wrap items-end justify-between gap-3">
+            <div>
+                <h1 class="text-2xl font-bold tracking-tight text-white sm:text-3xl">GameSpin roulette</h1>
+                <p class="mt-1 text-sm text-slate-400">
+                    {{ $eligibleCount }} eligible game{{ $eligibleCount === 1 ? '' : 's' }} in your library right now.
+                </p>
+            </div>
+            <x-ui.button :href="route('library.index')" variant="secondary">Manage library</x-ui.button>
+        </div>
+
+        {{-- Roulette reel --}}
+        <section x-show="phase !== 'idle'" x-cloak
+            class="relative mt-6 overflow-hidden rounded-3xl border border-white/5 bg-abyss-900/60">
+            <div class="pointer-events-none absolute -top-24 left-1/2 h-48 w-[36rem] -translate-x-1/2 rounded-full bg-accent-500/15 blur-3xl"></div>
+
+            <div class="relative">
+                <div x-ref="viewport" class="relative overflow-hidden py-6">
+                    <div x-ref="strip" class="flex gap-3 will-change-transform">
+                        <template x-for="(item, index) in reel" :key="index">
+                            <div class="cover-frame relative h-24 w-32 flex-none overflow-hidden rounded-xl border bg-abyss-800 transition duration-300"
+                                :class="phase === 'result' && index === winnerIndex
+                                    ? 'gamespin-win scale-105 border-accent-400 ring-2 ring-accent-400'
+                                    : 'border-white/5 opacity-90'">
+                                <div class="absolute inset-0 grid place-items-center text-2xl font-bold text-white/20"
+                                    x-text="initial(item.name)"></div>
+                                <template x-if="item.cover">
+                                    <img :src="item.cover" alt="" loading="lazy"
+                                        class="relative h-full w-full object-cover" x-on:error="$el.remove()">
+                                </template>
+                                <div class="absolute inset-x-0 bottom-0 truncate bg-gradient-to-t from-abyss-950/95 to-transparent px-2 pb-1 pt-4 text-[10px] font-medium text-slate-200"
+                                    x-text="item.name"></div>
+                            </div>
+                        </template>
+                    </div>
+
+                    <div class="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-abyss-900 to-transparent"></div>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-abyss-900 to-transparent"></div>
+                </div>
+
+                {{-- Center marker --}}
+                <div class="pointer-events-none absolute inset-y-0 left-1/2 z-20 -translate-x-1/2">
+                    <div class="h-full w-px bg-gradient-to-b from-transparent via-accent-300 to-transparent shadow-[0_0_18px_4px_rgba(56,189,248,0.55)]"></div>
+                </div>
+                <div class="pointer-events-none absolute -top-0.5 left-1/2 z-20 -translate-x-1/2">
+                    <div class="h-0 w-0 border-x-8 border-t-8 border-x-transparent border-t-accent-400"></div>
                 </div>
             </div>
+
+            <p class="border-t border-white/5 px-5 py-3 text-center text-xs text-slate-400" x-show="phase === 'spinning'" x-cloak>
+                Choosing your game…
+            </p>
+        </section>
+
+        {{-- Result panel --}}
+        @if ($picked)
+            <section x-show="showResult" x-cloak
+                x-transition:enter="transition ease-out duration-500"
+                x-transition:enter-start="opacity-0 translate-y-4"
+                x-transition:enter-end="opacity-100 translate-y-0"
+                class="relative mt-6 overflow-hidden rounded-3xl border border-accent-500/30 bg-gradient-to-br from-abyss-900 to-abyss-950">
+                <div class="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-accent-500/20 blur-3xl"></div>
+
+                <div class="relative flex flex-col items-center gap-6 p-6 sm:flex-row sm:p-8">
+                    <x-game-cover :name="$picked['name']" :cover="$picked['cover'] ?? null"
+                        class="h-28 w-48 flex-none rounded-xl shadow-lg ring-1 ring-accent-500/40" />
+
+                    <div class="min-w-0 flex-1 text-center sm:text-left">
+                        <p class="text-xs font-semibold uppercase tracking-[0.25em] text-accent-400">Winner</p>
+                        <h2 class="mt-1.5 truncate text-3xl font-extrabold tracking-tight text-white sm:text-4xl" title="{{ $picked['name'] }}">
+                            {{ $picked['name'] }}
+                        </h2>
+
+                        @if (! empty($appliedFilters))
+                            <div class="mt-3 flex flex-wrap justify-center gap-2 sm:justify-start">
+                                @foreach ($appliedFilters as $key => $value)
+                                    <x-ui.badge>{{ str_replace('_', ' ', $key) }}: {{ $value }}</x-ui.badge>
+                                @endforeach
+                            </div>
+                        @endif
+
+                        <div class="mt-6 flex flex-wrap justify-center gap-3 sm:justify-start">
+                            <x-ui.button type="button" x-on:click="spinAgain()">Spin Again</x-ui.button>
+                            <x-ui.button :href="route('library.index')" variant="secondary">View Library</x-ui.button>
+                            <x-ui.button :href="route('history.index')" variant="ghost">View History</x-ui.button>
+                        </div>
+                    </div>
+                </div>
+            </section>
         @endif
 
-        <div class="mt-6 overflow-hidden rounded-xl border border-slate-800 bg-slate-900/50">
-            <div class="grid h-32 place-items-center bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800"
-                :class="spinning && 'animate-pulse'">
-                <span class="px-6 text-center text-2xl font-bold text-slate-200" x-text="spinning ? 'Spinning…' : '🎲'"></span>
+        {{-- Filters --}}
+        <form id="spin-form" method="POST" action="{{ route('picker.spin') }}"
+            x-show="phase !== 'spinning'"
+            class="mt-6 space-y-5 rounded-2xl border border-white/5 bg-abyss-900/60 p-6 sm:p-7"
+            x-on:submit="phase = 'spinning'">
+            @csrf
+
+            <div>
+                <label for="search" class="block text-sm font-medium text-slate-300">Title contains (optional)</label>
+                <input id="search" name="search" type="text" value="{{ old('search', $appliedFilters['search'] ?? '') }}"
+                    placeholder="e.g. Portal"
+                    class="mt-1.5 w-full rounded-xl border border-white/10 bg-abyss-950/70 px-3.5 py-2.5 text-slate-100 placeholder:text-slate-500 transition focus:border-accent-500/60 focus:outline-none focus:ring-2 focus:ring-accent-500/20">
             </div>
 
-            <form method="POST" action="{{ route('picker.spin') }}" class="space-y-5 p-6" @submit="spinning = true">
-                @csrf
-
+            <div class="grid gap-4 sm:grid-cols-2">
                 <div>
-                    <label for="search" class="block text-sm font-medium text-slate-300">Title contains (optional)</label>
-                    <input id="search" name="search" type="text" value="{{ old('search') }}" placeholder="e.g. Portal"
-                        class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 focus:border-indigo-500 focus:outline-none">
+                    <label for="min_playtime" class="block text-sm font-medium text-slate-300">Min playtime (minutes)</label>
+                    <input id="min_playtime" name="min_playtime" type="number" min="0"
+                        value="{{ old('min_playtime', $appliedFilters['min_playtime'] ?? '') }}"
+                        class="mt-1.5 w-full rounded-xl border border-white/10 bg-abyss-950/70 px-3.5 py-2.5 text-slate-100 transition focus:border-accent-500/60 focus:outline-none focus:ring-2 focus:ring-accent-500/20">
                 </div>
-
-                <div class="grid gap-4 sm:grid-cols-2">
-                    <div>
-                        <label for="min_playtime" class="block text-sm font-medium text-slate-300">Min playtime (minutes)</label>
-                        <input id="min_playtime" name="min_playtime" type="number" min="0" value="{{ old('min_playtime') }}"
-                            class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 focus:border-indigo-500 focus:outline-none">
-                    </div>
-                    <div>
-                        <label for="max_playtime" class="block text-sm font-medium text-slate-300">Max playtime (minutes)</label>
-                        <input id="max_playtime" name="max_playtime" type="number" min="0" value="{{ old('max_playtime') }}"
-                            class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 focus:border-indigo-500 focus:outline-none">
-                    </div>
+                <div>
+                    <label for="max_playtime" class="block text-sm font-medium text-slate-300">Max playtime (minutes)</label>
+                    <input id="max_playtime" name="max_playtime" type="number" min="0"
+                        value="{{ old('max_playtime', $appliedFilters['max_playtime'] ?? '') }}"
+                        class="mt-1.5 w-full rounded-xl border border-white/10 bg-abyss-950/70 px-3.5 py-2.5 text-slate-100 transition focus:border-accent-500/60 focus:outline-none focus:ring-2 focus:ring-accent-500/20">
                 </div>
+            </div>
 
-                <button type="submit" :disabled="spinning"
-                    class="w-full rounded-lg bg-indigo-500 px-4 py-3 font-semibold text-white hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-60">
-                    <span x-show="!spinning">Spin the wheel</span>
-                    <span x-show="spinning" x-cloak>Choosing…</span>
-                </button>
-            </form>
-        </div>
+            <button type="submit" :disabled="phase === 'spinning'"
+                class="w-full rounded-xl bg-accent-500 px-4 py-3 font-semibold text-abyss-950 shadow-lg shadow-accent-500/20 transition hover:bg-accent-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-abyss-950 disabled:cursor-not-allowed disabled:opacity-60">
+                Spin the wheel
+            </button>
+        </form>
 
         <p class="mt-4 text-center text-xs text-slate-500">
             The winner is chosen on the server and saved to your history exactly once.
         </p>
     </div>
 @endsection
+
+@push('scripts')
+    <script>
+        window.rouletteRig = function (config) {
+            const picked = config.picked || null;
+            const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+            return {
+                phase: picked ? 'ready' : 'idle',
+                reel: picked ? picked.reel : [],
+                winnerIndex: picked ? picked.winner_index : 0,
+                result: picked,
+                showResult: false,
+                duration: reduceMotion ? 0 : 6200,
+
+                boot() {
+                    if (!picked || !this.reel.length) {
+                        return;
+                    }
+                    this.$nextTick(() => {
+                        window.setTimeout(() => this.runReel(), reduceMotion ? 0 : 200);
+                    });
+                },
+
+                initial(name) {
+                    return (name || '?').trim().charAt(0).toUpperCase();
+                },
+
+                runReel() {
+                    if (this.phase === 'spinning') {
+                        return;
+                    }
+
+                    this.phase = 'spinning';
+                    this.showResult = false;
+
+                    const strip = this.$refs.strip;
+                    const viewport = this.$refs.viewport;
+                    if (!strip || !viewport) {
+                        return;
+                    }
+
+                    const card = strip.children[this.winnerIndex] || strip.children[0];
+                    const cardWidth = card ? card.getBoundingClientRect().width : 128;
+                    const computed = getComputedStyle(strip);
+                    const gap = parseFloat(computed.columnGap || computed.gap) || 12;
+                    const step = cardWidth + gap;
+                    const viewportWidth = viewport.clientWidth;
+
+                    // Keep the random stop point inside the winning card so it lands exactly on it.
+                    const jitter = (Math.random() - 0.5) * (cardWidth * 0.5);
+                    const target = (this.winnerIndex * step) + (cardWidth / 2) - (viewportWidth / 2) + jitter;
+
+                    if (this.duration === 0) {
+                        strip.style.transition = 'none';
+                        strip.style.transform = `translateX(${-target}px)`;
+                        this.phase = 'result';
+                        this.showResult = true;
+                        return;
+                    }
+
+                    strip.style.transition = 'none';
+                    strip.style.transform = 'translateX(0px)';
+                    void strip.offsetWidth; // force reflow so the reset is committed
+
+                    strip.style.transition = `transform ${this.duration}ms cubic-bezier(0.08, 0.82, 0.17, 1)`;
+
+                    requestAnimationFrame(() => {
+                        strip.style.transform = `translateX(${-target}px)`;
+                    });
+
+                    window.setTimeout(() => {
+                        this.phase = 'result';
+                        this.showResult = true;
+                    }, this.duration + 150);
+                },
+
+                spinAgain() {
+                    this.showResult = false;
+                    const form = document.getElementById('spin-form');
+                    if (form) {
+                        form.requestSubmit();
+                    }
+                },
+            };
+        };
+    </script>
+@endpush

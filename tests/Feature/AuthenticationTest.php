@@ -49,6 +49,7 @@ class AuthenticationTest extends TestCase
         $this->get('/library')->assertOk();
         $this->get('/picker')->assertOk();
         $this->get('/history')->assertOk();
+        $this->get('/community')->assertOk();
     }
 
     public function test_member_cannot_access_admin_routes(): void
@@ -57,6 +58,10 @@ class AuthenticationTest extends TestCase
 
         $this->actingAs($member)->get('/admin')->assertForbidden();
         $this->actingAs($member)->get('/admin/users')->assertForbidden();
+        $this->actingAs($member)->get('/admin/posts')->assertForbidden();
+        $this->actingAs($member)->get('/admin/announcements')->assertForbidden();
+        $this->actingAs($member)->get('/admin/analytics')->assertForbidden();
+        $this->actingAs($member)->get('/admin/steam-requests')->assertForbidden();
     }
 
     public function test_admin_can_access_admin_routes(): void
@@ -67,6 +72,10 @@ class AuthenticationTest extends TestCase
         $this->actingAs($admin)->get('/admin/users')->assertOk();
         $this->actingAs($admin)->get('/admin/games')->assertOk();
         $this->actingAs($admin)->get('/admin/syncs')->assertOk();
+        $this->actingAs($admin)->get('/admin/posts')->assertOk();
+        $this->actingAs($admin)->get('/admin/announcements')->assertOk();
+        $this->actingAs($admin)->get('/admin/analytics')->assertOk();
+        $this->actingAs($admin)->get('/admin/steam-requests')->assertOk();
     }
 
     public function test_guest_is_redirected_from_member_pages(): void

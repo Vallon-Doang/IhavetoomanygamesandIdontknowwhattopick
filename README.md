@@ -3,7 +3,8 @@
 GameSpin is a Laravel + MySQL web application that helps you decide which game to play.
 Members build a game library (seeded demo data or a linked Steam account), filter the
 eligible games, and let a fair server-side roulette pick one at random. Every pick is
-recorded in a personal history. Administrators get a separate dashboard with read-only
+recorded in a personal history. Members can also post to a community feed, and
+administrators get a separate dashboard for moderation, announcements, analytics and
 reporting on users, the shared game catalog, and Steam sync activity.
 
 This repository is a school web-application project and is designed to be reproducible
@@ -20,6 +21,10 @@ from a fresh Git clone.
 - Spin history, newest first, scoped to the signed-in member.
 - Optional Steam OpenID account linking and owned-games synchronization, with graceful handling of missing credentials / private libraries.
 - Admin dashboard, user directory, game catalog and sync activity, all backed by MySQL counts.
+- Community feed with image posts; authors can edit/delete their own posts, and post creation validates text and uploads (JPG/PNG/WebP, max 2 MB).
+- Admin post moderation (hide with a reason / restore / permanently delete) and admin announcements that surface at the top of the feed.
+- Admin analytics page with live MySQL figures (users, posts, hidden posts, spins, a 14-day post chart, top games and top posters).
+- Administrators can unlink a user's Steam account (logged), and members who hit a Steam-linking conflict can open a reset request that admins resolve or dismiss.
 
 ## Requirements (tested versions)
 
@@ -73,6 +78,7 @@ DB_PASSWORD=your-password
 
 ```bash
 php artisan migrate --seed
+php artisan storage:link   # required for community post image uploads
 npm run build
 php artisan serve
 ```
@@ -81,7 +87,36 @@ Then open <http://127.0.0.1:8000>.
 
 `php artisan migrate --seed` is the primary way to create the database: migrations define
 the schema and seeders insert repeatable demo data. Seeders are safe to re-run without
-duplicating users or games.
+duplicating users, games, posts or announcements.
+
+`php artisan storage:link` creates the public symlink used to serve uploaded post images.
+Community posts without images work fine without it.
+
+### Alternative: import the provided SQL dump
+
+If the teacher requires an importable SQL file (for example through **phpMyAdmin**), a
+version-matched dump is included at [`database/gamespin.sql`](database/gamespin.sql).
+
+**phpMyAdmin**
+
+1. Create an empty database (for example `gamespin`) and select it in the sidebar.
+2. Open the **Import** tab, choose `database/gamespin.sql`, and click **Import**.
+3. Confirm the tables and demo rows appear (users, games, spin history, posts, announcements).
+
+**Command line**
+
+```bash
+mysql -u gamespin -p gamespin < database/gamespin.sql
+```
+
+The dump contains the schema, the two demo accounts (documented local-demo-only passwords)
+and the seeded games, spins, posts and announcements. It holds no real user data or secrets.
+Use **either** the dump **or** `php artisan migrate --seed` against an empty database —
+never both on the same tables. Regenerate the dump after schema or seed changes:
+
+```bash
+mysqldump -h 127.0.0.1 -u gamespin -p --no-tablespaces --default-character-set=utf8mb4 gamespin > database/gamespin.sql
+```
 
 ### Run and build
 
@@ -106,8 +141,12 @@ changed or removed in any real deployment.
 1. Open the landing page and register a brand-new account (it is created as a **member**).
 2. Log in as the seeded member to see the dashboard and the seeded demo library.
 3. Search or exclude a game in **Library**, then use **Roulette** to spin and confirm the pick appears in **History**.
-4. Log out and log in as the seeded admin; open **Admin → Users / Games / Syncs**.
-5. Confirm a member cannot open `/admin` (HTTP 403).
+4. Open **Community**, create a post (optionally with an image), then edit it. Notice the seeded announcements at the top of the feed.
+5. Log out and log in as the seeded admin; open **Admin → Users / Games / Syncs**.
+6. In **Admin → Moderation**, hide a post with a reason (it disappears from the feed) and then restore it. In **Admin → Announcements**, publish one and confirm it appears at the top of the member feed.
+7. Open **Admin → Analytics** to review live MySQL figures.
+8. Confirm a member cannot open `/admin` or edit another member's post (HTTP 403).
+9. In **Admin → Users**, use **Unlink Steam** to clear a user's Steam link, or resolve a pending ticket in **Admin → Steam requests**.
 
 ## Steam linking and synchronization
 
@@ -123,6 +162,7 @@ STEAM_CALLBACK_URL="${APP_URL}/steam/callback"
 - **Link:** a signed-in member visits `/steam/connect`, is sent to Steam OpenID, and returns to `/steam/callback`. The returned identity is verified server-side; a SteamID typed by a user is never trusted, and a SteamID already linked to another user is rejected.
 - **Sync:** `POST /steam/sync` imports the member's owned games into the shared `games` catalog and their `user_games` ownership rows. Repeated syncs are idempotent (upsert by Steam App ID and by user/game).
 - **Failures are non-destructive:** a failed or incomplete sync keeps the last valid library and records a failed `steam_sync_runs` row. A private or unavailable library is reported as an explicit user-facing state, not treated as "zero games".
+- **One Steam account per user / one user per SteamID:** linking a SteamID already attached to another GameSpin account is rejected. If a member believes that is a mistake, their dashboard offers a **Request a Steam reset** button that opens a ticket; an administrator can resolve it (which unlinks the conflicting Steam account) or dismiss it from **Admin → Steam requests**. Admins can also unlink any user's Steam account from **Admin → Users**.
 
 ### Fallback without Steam
 
@@ -135,12 +175,12 @@ demo presentation.
 Single Laravel monolith — Blade views styled with Tailwind CSS v4, with Alpine.js used for
 the roulette interaction on the picker page.
 
-- `app/Http/Controllers` — request handling for public, member and `Admin\*` areas.
-- `app/Http/Requests` — form-request validation (registration, login, spin filters).
+- `app/Http/Controllers` — request handling for public, member and `Admin\*` areas (including `CommunityController` and the admin moderation/announcement/analytics controllers).
+- `app/Http/Requests` — form-request validation (registration, login, spin filters, posts, announcements, moderation).
 - `app/Http/Middleware/EnsureUserIsAdmin.php` — the `admin` route middleware.
-- `app/Policies/UserGamePolicy.php` — ownership checks for library records.
+- `app/Policies` — `UserGamePolicy` (library ownership), `PostPolicy` (author-only edits; admin moderation) and `AnnouncementPolicy` (admin-only).
 - `app/Services` — `SteamService`, `SteamLibrarySyncService`, `GamePickerService`.
-- `app/Models` — `User`, `SteamAccount`, `Game`, `UserGame`, `SpinHistory`, `SteamSyncRun`.
+- `app/Models` — `User`, `SteamAccount`, `Game`, `UserGame`, `SpinHistory`, `SteamSyncRun`, `Post`, `Announcement`.
 
 ### Main routes
 
@@ -153,7 +193,14 @@ the roulette interaction on the picker page.
 | `GET /picker`, `POST /picker/spin` | Member | Roulette |
 | `GET /history` | Member | Spin history |
 | `GET /steam/connect`, `GET /steam/callback`, `POST /steam/sync`, `DELETE /steam/disconnect` | Member | Steam |
+| `POST /steam/reset-request` | Member | Request help with a conflicting Steam link |
+| `GET /community`, `POST /community/posts`, `GET /community/posts/{post}/edit`, `PUT/DELETE /community/posts/{post}` | Member | Community feed + own-post editing |
 | `GET /admin`, `/admin/users`, `/admin/games`, `/admin/syncs` | Admin | Administration |
+| `GET /admin/posts`, `PATCH /admin/posts/{post}/moderation`, `DELETE /admin/posts/{post}` | Admin | Post moderation |
+| `GET /admin/announcements`, `POST /admin/announcements`, `GET/PUT/DELETE /admin/announcements/{announcement}` | Admin | Announcements |
+| `GET /admin/analytics` | Admin | Community analytics |
+| `DELETE /admin/users/{user}/steam` | Admin | Unlink a user's Steam account (logged) |
+| `GET /admin/steam-requests`, `PATCH /admin/steam-requests/{steamResetRequest}` | Admin | Review and resolve/dismiss Steam reset requests |
 
 ## Running the tests
 
@@ -165,7 +212,9 @@ php artisan test
 ```
 
 Covered: guest pages, member-only registration, role-based access, picker eligibility and
-history rules, cross-user isolation, and idempotent / failure-safe Steam sync.
+history rules, cross-user isolation, idempotent / failure-safe Steam sync, community post
+creation and validation, author-only editing, upload validation, admin moderation,
+announcements and analytics access, and Steam conflict / reset-request handling.
 
 ## Troubleshooting
 
@@ -174,6 +223,7 @@ history rules, cross-user isolation, and idempotent / failure-safe Steam sync.
 - **Migration failure after partial setup:** recreate an empty database, then run `php artisan migrate:fresh --seed`.
 - **Missing styles or "Vite manifest not found":** run `npm ci && npm run build`.
 - **Steam API failure / empty library:** confirm `STEAM_API_KEY` is set and the Steam profile's game details are public. Without a key, use the seeded demo library.
+- **Community post images not loading (404):** run `php artisan storage:link` so `public/storage` points to `storage/app/public`.
 - **Permissions on `storage/`:** the web server needs write access to `storage/` and `bootstrap/cache/`.
 
 ## Attribution
