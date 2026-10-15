@@ -19,6 +19,7 @@ from a fresh Git clone.
 - Game library with title search, playtime and exclusion toggles.
 - Server-side roulette picker with optional title/playtime filters; the browser only animates the already-chosen result.
 - Spin history, newest first, scoped to the signed-in member.
+- Spin results (and history rows) offer **Open in Steam** (`steam://run/{appid}`, launches the client) and a **Steam page** link when the chosen game has a Steam App ID.
 - Optional Steam OpenID account linking and owned-games synchronization, with graceful handling of missing credentials / private libraries.
 - Admin dashboard, user directory, game catalog and sync activity, all backed by MySQL counts.
 - Community feed with image posts; authors can edit/delete their own posts, and post creation validates text and uploads (JPG/PNG/WebP, max 2 MB).

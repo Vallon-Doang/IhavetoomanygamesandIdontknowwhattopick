@@ -6,6 +6,7 @@
     @php
         $picked = session('picked');
         $appliedFilters = $picked['filters'] ?? [];
+        $steamAppId = $picked['steam_app_id'] ?? null;
         $rouletteConfig = [
             'picked' => $picked,
         ];
@@ -93,6 +94,17 @@
                         @endif
 
                         <div class="mt-6 flex flex-wrap justify-center gap-3 sm:justify-start">
+                            @if ($steamAppId)
+                                <x-ui.button :href="'steam://run/'.$steamAppId" variant="success">
+                                    <svg viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4" aria-hidden="true">
+                                        <path d="M11.98 2C5.9 2 1 6.9 1 12.98c0 5.03 3.55 9.24 8.3 10.32l2.9-4.3c.55.24 1.16.38 1.8.38 2.48 0 4.5-2.02 4.5-4.5s-2.02-4.5-4.5-4.5c-.66 0-1.28.15-1.84.4L8.2 13.4c.05-.3.1-.6.1-.92 0-2.9 2.36-5.26 5.26-5.26s5.26 2.36 5.26 5.26-2.36 5.26-5.26 5.26h-.1l-1.6 2.36c.9.2 1.83.3 2.78.3 4.42 0 8-3.58 8-8s-3.58-8-8-8Zm-5.3 14.9 1.6-2.42a3.3 3.3 0 0 1-1.9-2.98c0-1.83 1.49-3.32 3.32-3.32l2.1-1.42c-.3-.1-.62-.16-.95-.16-2.9 0-5.26 2.36-5.26 5.26 0 .8.18 1.56.5 2.24l.6.8Z"/>
+                                    </svg>
+                                    Open in Steam
+                                </x-ui.button>
+                                <x-ui.button :href="'https://store.steampowered.com/app/'.$steamAppId.'/'" variant="secondary" target="_blank" rel="noopener">
+                                    Steam page
+                                </x-ui.button>
+                            @endif
                             <x-ui.button type="button" x-on:click="spinAgain()">Spin Again</x-ui.button>
                             <x-ui.button :href="route('library.index')" variant="secondary">View Library</x-ui.button>
                             <x-ui.button :href="route('history.index')" variant="ghost">View History</x-ui.button>

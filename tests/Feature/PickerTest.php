@@ -100,6 +100,29 @@ class PickerTest extends TestCase
             });
     }
 
+    public function test_spin_result_exposes_steam_actions_when_app_id_present(): void
+    {
+        $user = User::factory()->create();
+        $game = Game::create(['name' => 'Portal 2', 'steam_app_id' => 620]);
+        UserGame::create([
+            'user_id' => $user->id,
+            'game_id' => $game->id,
+            'playtime_minutes' => 100,
+            'source' => 'demo',
+            'is_excluded' => false,
+        ]);
+
+        $this->actingAs($user)
+            ->post('/picker/spin', [])
+            ->assertSessionHas('picked', fn (array $picked): bool => $picked['steam_app_id'] === 620);
+
+        $this->actingAs($user)
+            ->get('/picker')
+            ->assertOk()
+            ->assertSee('steam://run/620', false)
+            ->assertSee('https://store.steampowered.com/app/620/', false);
+    }
+
     public function test_member_cannot_toggle_another_members_exclusion(): void
     {
         $owner = User::factory()->create();

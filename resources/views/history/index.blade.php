@@ -38,7 +38,15 @@
                             <td class="px-4 py-3">
                                 <div class="flex items-center gap-3">
                                     <x-game-cover :name="$spin->game_name" :cover="$spin->game?->cover_url" class="h-11 w-20 flex-none rounded-lg" />
-                                    <span class="font-medium text-slate-100">{{ $spin->game_name }}</span>
+                                    <div class="min-w-0">
+                                        <div class="font-medium text-slate-100">{{ $spin->game_name }}</div>
+                                        @if ($spin->game?->steam_app_id)
+                                            <div class="mt-0.5 flex gap-3 text-xs">
+                                                <a href="steam://run/{{ $spin->game->steam_app_id }}" class="font-medium text-emerald-300 hover:text-emerald-200">Open in Steam</a>
+                                                <a href="https://store.steampowered.com/app/{{ $spin->game->steam_app_id }}/" target="_blank" rel="noopener" class="font-medium text-accent-300 hover:text-accent-200">Steam page</a>
+                                            </div>
+                                        @endif
+                                    </div>
                                 </div>
                             </td>
                             <td class="hidden px-4 py-3 sm:table-cell">

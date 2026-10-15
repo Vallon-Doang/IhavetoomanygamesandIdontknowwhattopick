@@ -47,6 +47,7 @@ class PickerController extends Controller
                 'id' => $result->game_id,
                 'name' => $result->game_name,
                 'cover' => $winnerGame?->cover_url,
+                'steam_app_id' => $winnerGame?->steam_app_id,
                 'filters' => $result->filters,
                 'reel' => $reel['items'],
                 'winner_index' => $reel['winner_index'],
