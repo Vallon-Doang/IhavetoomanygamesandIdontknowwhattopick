@@ -26,7 +26,7 @@
 
     @if ($imageUrl)
         <div class="mt-4 overflow-hidden rounded-xl border border-white/5">
-            <img src="{{ $imageUrl }}" alt="Image attached to {{ $author?->name }}'s post" loading="lazy" class="max-h-96 w-full object-cover">
+            <img src="{{ $imageUrl }}" alt="Image attached to {{ $author?->name }}'s post" loading="lazy" onerror="this.parentElement.remove()" class="max-h-96 w-full object-cover">
         </div>
     @endif
 
