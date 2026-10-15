@@ -1,5 +1,7 @@
 # GameSpin
 
+> Nih tugas sekolah doang, jangan protes kalau deprecated
+
 GameSpin is a Laravel + MySQL web application that helps you decide which game to play.
 Members build a game library (seeded demo data or a linked Steam account), filter the
 eligible games, and let a fair server-side roulette pick one at random. Every pick is
