@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\SynchronizationInProgressException;
 use App\Models\SteamAccount;
+use App\Models\SteamSyncRun;
 use App\Services\SteamLibrarySyncService;
 use App\Services\SteamService;
 use Illuminate\Http\RedirectResponse;
@@ -91,9 +93,16 @@ class SteamController extends Controller
             return redirect()->route('dashboard')->with('error', 'A synchronization is already in progress.');
         }
 
-        $run = $this->sync->sync($user, $account);
+        try {
+            $run = $this->sync->sync($user, $account);
+        } catch (SynchronizationInProgressException) {
+            return redirect()->route('dashboard')->with(
+                'error',
+                'A synchronization is already in progress. Try again once it finishes.'
+            );
+        }
 
-        if ($run->status === \App\Models\SteamSyncRun::STATUS_SUCCESS) {
+        if ($run->status === SteamSyncRun::STATUS_SUCCESS) {
             return redirect()->route('dashboard')->with(
                 'status',
                 "Steam synchronization complete. {$run->games_imported} games imported."

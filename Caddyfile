@@ -1,0 +1,22 @@
+# GameSpin on Vercel / FrankenPHP
+#
+# Copied over the image's default config at /etc/frankenphp/Caddyfile (the
+# base image's CMD already points there), so the plain `frankenphp` entrypoint
+# picks it up without an explicit `run --config`.
+#
+# php_server expands to the canonical "file / frontend controller" routing:
+#   @indexFiles file { try_files {path} {path}/index.php index.php }
+#   rewrite to the matched PHP file, then hand *.php to FrankenPHP and serve
+#   everything else (compiled assets, favicon, robots.txt) as static files.
+# Vercel terminates TLS in front of this server, so Caddy listens on plain
+# HTTP only.
+
+{
+	skip_install_trust
+}
+
+:{$PORT:80} {
+	root * /app/public
+	encode zstd gzip
+	php_server
+}

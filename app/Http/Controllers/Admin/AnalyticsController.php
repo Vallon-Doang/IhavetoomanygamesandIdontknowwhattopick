@@ -9,6 +9,7 @@ use App\Models\SpinHistory;
 use App\Models\SteamAccount;
 use App\Models\User;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class AnalyticsController extends Controller
@@ -23,10 +24,15 @@ class AnalyticsController extends Controller
 
         $totalPosts = Post::withTrashed()->count();
 
+        // DATE() works on MySQL/SQLite; PostgreSQL needs an explicit cast.
+        $dateExpression = DB::connection()->getDriverName() === 'pgsql'
+            ? 'CAST(created_at AS DATE)'
+            : 'DATE(created_at)';
+
         $dailyPosts = Post::query()
             ->withTrashed()
             ->where('created_at', '>=', now()->subDays(13)->startOfDay())
-            ->selectRaw('DATE(created_at) as day, COUNT(*) as total')
+            ->selectRaw($dateExpression.' as day, COUNT(*) as total')
             ->groupBy('day')
             ->orderBy('day')
             ->pluck('total', 'day');

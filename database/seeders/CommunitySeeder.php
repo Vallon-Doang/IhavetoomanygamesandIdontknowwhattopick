@@ -14,8 +14,8 @@ class CommunitySeeder extends Seeder
      */
     public function run(): void
     {
-        $member = User::where('email', 'member@gamespin.test')->first();
-        $admin = User::where('email', 'admin@gamespin.test')->first();
+        $member = User::where('email', config('demo.member.email'))->first();
+        $admin = User::where('email', config('demo.admin.email'))->first();
 
         if (! $member || ! $admin) {
             return;

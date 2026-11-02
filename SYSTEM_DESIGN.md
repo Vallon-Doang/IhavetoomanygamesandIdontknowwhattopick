@@ -3,7 +3,7 @@
 **Project type:** School web-application project  
 **Status:** Implementation specification (v1.0)  
 **Backend:** Laravel / PHP  
-**Database:** MySQL  
+**Database:** MySQL (local / school submission) · PostgreSQL (Vercel production)  
 **Frontend:** Blade, Tailwind CSS, Alpine.js (where useful)
 
 ## 1. Overview
@@ -11,6 +11,12 @@
 GameSpin is a Laravel web application that helps a user decide which game to play. A member can connect a Steam account, synchronize an accessible Steam game library, filter eligible games, and randomly pick a game through a roulette-style interface. The app records selection history. Administrators can review users, game records, synchronization activity, and application health.
 
 The school submission must be **reproducible from a fresh Git clone**: install dependencies, create an empty MySQL database, migrate/seed it, run the site, and demonstrate all mandatory features. The main picker must remain demonstrable with seeded sample data if Steam credentials or live network access are unavailable.
+
+> Production hosting (optional, outside the school baseline) is documented in
+> [`DEPLOYMENT.md`](DEPLOYMENT.md): GameSpin runs as a Vercel container-backed
+> Function on FrankenPHP with Neon PostgreSQL and Cloudflare R2 for community
+> post images. The application layer is identical — only the database driver
+> and upload storage driver change through environment variables.
 
 ### 1.1 School requirements (mandatory)
 
@@ -43,7 +49,7 @@ The school submission must be **reproducible from a fresh Git clone**: install d
 | Layer | Selected technology | Responsibility |
 |---|---|---|
 | Server | Laravel / PHP | Routes, authorization, validation, business logic |
-| Data | MySQL with Eloquent | Users, Steam accounts, games, ownership, history, sync runs |
+| Data | MySQL / PostgreSQL with Eloquent | Users, Steam accounts, games, ownership, history, sync runs |
 | Views | Blade + Tailwind CSS | Responsive pages and components |
 | Interactivity | Alpine.js (optional) | Filters, roulette animation, UI interactions |
 | Authentication | Laravel's supported session authentication | Registration, login, logout, password hashing |
@@ -65,7 +71,7 @@ Controllers + Form Requests + Policies/Middleware
        \       |       /
        Eloquent Models
             |
-          MySQL
+    MySQL / PostgreSQL
 
 SteamService <----> Steam services (external)
 ```

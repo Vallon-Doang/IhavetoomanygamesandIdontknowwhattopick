@@ -1,0 +1,56 @@
+# Keep local secrets, caches and heavy artifacts out of the container image.
+# Everything below is either generated, private, or not needed at runtime.
+
+.git
+.gitignore
+.gitattributes
+.github
+
+.env*
+!.env.example
+/auth.json
+
+.nova/
+.idea/
+.vscode/
+.zed/
+.phpactor.json
+
+# Vendor and build outputs are produced inside the image itself.
+/vendor/
+/node_modules/
+/public/build/
+/public/hot
+/public/storage
+
+# Runtime state is not part of the image.
+/storage/*.key
+/storage/pail
+
+# Framework caches must be regenerated at build time.
+/bootstrap/cache/*.php
+
+# Tests, docs and local helpers.
+/tests/
+/phpunit.xml
+/.phpunit.result.cache
+
+# Local-only MySQL dump (Vercel uses migrations against PostgreSQL).
+/database/gamespin.sql
+
+# Documentation.
+/README.md
+/INSTALL.md
+/SYSTEM_DESIGN.md
+/DEPLOYMENT.md
+/CHANGELOG.md
+
+# Deployment engine itself.
+/Dockerfile
+/Containerfile
+/Dockerfile.vercel
+/Caddyfile
+/vercel.json
+/.vercelignore
+/.vercel/
+/docker/

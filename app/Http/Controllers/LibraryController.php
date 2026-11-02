@@ -18,7 +18,9 @@ class LibraryController extends Controller
             ->with('game')
             ->when($search !== '', function ($query) use ($search): void {
                 $escaped = '%'.str_replace(['%', '_'], ['\%', '\_'], $search).'%';
-                $query->whereHas('game', fn ($q) => $q->where('name', 'like', $escaped));
+                // whereLike stays case-insensitive on every supported database
+                // (LIKE on MySQL, ILIKE on PostgreSQL, LIKE on SQLite).
+                $query->whereHas('game', fn ($q) => $q->whereLike('name', $escaped));
             })
             ->join('games', 'games.id', '=', 'user_games.game_id')
             ->orderBy('games.name')

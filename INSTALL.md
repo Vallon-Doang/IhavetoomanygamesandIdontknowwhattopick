@@ -6,6 +6,11 @@ This guide installs GameSpin on a brand-new machine. It is written **Windows-fir
 Verified versions during development: PHP 8.3.32, Composer 2.10.3, Node.js 22.23.1,
 npm 10.9.8, Laravel 13.x, MySQL 8+ (tested against MariaDB 11.8.8).
 
+> Looking for the **Vercel production deployment** instructions (FrankenPHP
+> container + Neon PostgreSQL + Cloudflare R2)? See
+> [`DEPLOYMENT.md`](DEPLOYMENT.md). This guide is about running GameSpin on a
+> local development machine.
+
 ---
 
 ## 1. Install the prerequisites
@@ -183,6 +188,7 @@ These demo credentials are for local use only and must be changed/removed in a r
 | Migration errors after partial setup | Recreate the empty database, then `php artisan migrate:fresh --seed`. |
 | Steam sync fails or empty library | Set a valid `STEAM_API_KEY` and make the Steam profile's game details public; otherwise use the demo library. |
 | Permission errors on `storage/` | Ensure the web server can write to `storage/` and `bootstrap/cache/`. |
+| Demo accounts don't exist | `php artisan db:seed` was skipped. Set `DEMO_*_PASSWORD` in `.env` if you're outside the local environment. |
 
 ---
 

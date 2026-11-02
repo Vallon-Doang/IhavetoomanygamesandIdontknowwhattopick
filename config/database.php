@@ -59,8 +59,12 @@ return [
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
+            // MySQL writes the SSL CA file path into a driver option. The
+            // constant lives on \Pdo\Mysql from PHP 8.4 but the classic
+            // \PDO constant only, so pick whichever exists. Both carry the
+            // same integer value.
             'options' => extension_loaded('pdo_mysql') ? array_filter([
-                Mysql::ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+                (class_exists(Mysql::class) ? Mysql::ATTR_SSL_CA : PDO::MYSQL_ATTR_SSL_CA) => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],
         ],
 
@@ -79,8 +83,10 @@ return [
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
+            // See the comment on the mysql connection: not every PHP build
+            // exposes \Pdo\Mysql, so fall back to the classic constant.
             'options' => extension_loaded('pdo_mysql') ? array_filter([
-                Mysql::ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+                (class_exists(Mysql::class) ? Mysql::ATTR_SSL_CA : PDO::MYSQL_ATTR_SSL_CA) => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],
         ],
 
