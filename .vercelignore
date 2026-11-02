@@ -1,0 +1,35 @@
+# Keep local secrets, caches and heavy artifacts out of the Vercel build
+# context. The container's own .dockerignore governs what ends up inside the
+# image; this file governs what Vercel uploads before building it.
+
+.git
+.gitignore
+.gitattributes
+.github
+
+.env*
+!.env.example
+/auth.json
+
+.nova/
+.idea/
+.vscode/
+.zed/
+.phpactor.json
+
+/vendor/
+/node_modules/
+/public/build/
+/public/hot
+/public/storage
+
+/storage/*.key
+/storage/pail
+
+/tests/
+/phpunit.xml
+/.phpunit.result.cache
+
+/database/gamespin.sql
+
+/.vercel/

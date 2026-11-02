@@ -35,7 +35,7 @@ class GameSeeder extends Seeder
 
     public function run(): void
     {
-        $member = User::where('email', 'member@gamespin.test')->first();
+        $member = User::where('email', config('demo.member.email'))->first();
 
         if (! $member) {
             return;

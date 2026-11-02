@@ -38,13 +38,34 @@ return [
             'report' => false,
         ],
 
+        /*
+        |------------------------------------------------------------
+        | Public uploads disk
+        |------------------------------------------------------------
+        |
+        | The "public" disk holds user-facing uploads (community post
+        | images). Its driver is configurable so the same code works on a
+        | traditional server (local disk + storage:link) and on ephemeral
+        | hosts that need S3-compatible object storage, for example
+        | Cloudflare R2 or AWS S3 on Vercel.
+        |
+        */
+
         'public' => [
-            'driver' => 'local',
+            'driver' => env('FILESYSTEM_PUBLIC_DRIVER', 'local'),
             'root' => storage_path('app/public'),
-            'url' => rtrim(env('APP_URL', 'http://localhost'), '/').'/storage',
+            'url' => env('FILESYSTEM_PUBLIC_URL', rtrim(env('APP_URL', 'http://localhost'), '/').'/storage'),
             'visibility' => 'public',
-            'throw' => false,
+            'throw' => env('FILESYSTEM_PUBLIC_THROW', true),
             'report' => false,
+
+            // S3-compatible driver settings (Cloudflare R2, AWS S3, ...).
+            'key' => env('AWS_ACCESS_KEY_ID'),
+            'secret' => env('AWS_SECRET_ACCESS_KEY'),
+            'region' => env('AWS_DEFAULT_REGION', 'auto'),
+            'bucket' => env('AWS_BUCKET'),
+            'endpoint' => env('AWS_ENDPOINT'),
+            'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
         ],
 
         's3' => [

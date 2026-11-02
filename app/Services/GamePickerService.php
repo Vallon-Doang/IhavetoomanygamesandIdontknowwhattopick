@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Game;
 use App\Models\SpinHistory;
 use App\Models\User;
 use App\Models\UserGame;
@@ -26,7 +27,9 @@ class GamePickerService
             ->where('is_excluded', false)
             ->when(filled($filters['search'] ?? null), function (Builder $query) use ($filters): void {
                 $search = '%'.str_replace(['%', '_'], ['\%', '\_'], $filters['search']).'%';
-                $query->whereHas('game', fn (Builder $q) => $q->where('name', 'like', $search));
+                // whereLike stays case-insensitive on every supported database
+                // (LIKE on MySQL, ILIKE on PostgreSQL, LIKE on SQLite).
+                $query->whereHas('game', fn (Builder $q) => $q->whereLike('name', $search));
             })
             ->when(filled($filters['min_playtime'] ?? null), function (Builder $query) use ($filters): void {
                 $query->where('playtime_minutes', '>=', (int) $filters['min_playtime']);
@@ -79,7 +82,7 @@ class GamePickerService
      * All eligible catalog games for the member, used to populate the reel.
      *
      * @param  array{search?: string|null, min_playtime?: int|null, max_playtime?: int|null}  $filters
-     * @return Collection<int, \App\Models\Game>
+     * @return Collection<int, Game>
      */
     public function eligibleGames(User $user, array $filters = []): Collection
     {
@@ -95,7 +98,7 @@ class GamePickerService
      * Build the roulette reel: a random strip of covers with the server-chosen
      * winner placed at a fixed index so the animation can land on it exactly.
      *
-     * @param  Collection<int, \App\Models\Game>  $games
+     * @param  Collection<int, Game>  $games
      * @return array{items: array<int, array{id: int, name: string, cover: string|null}>, winner_index: int}
      */
     public function buildReel(Collection $games, int $winnerId, string $winnerName, ?string $winnerCover): array

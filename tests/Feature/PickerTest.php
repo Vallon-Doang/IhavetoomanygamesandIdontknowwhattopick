@@ -80,6 +80,17 @@ class PickerTest extends TestCase
         $this->assertDatabaseHas('spin_history', ['user_id' => $user->id, 'game_name' => 'Portal 2']);
     }
 
+    public function test_title_search_filter_is_case_insensitive(): void
+    {
+        $user = User::factory()->create();
+        $this->own($user, 'PORTAL 2 Lower');
+
+        $this->actingAs($user)->post('/picker/spin', ['search' => 'portal'])
+            ->assertRedirect(route('picker.index'));
+
+        $this->assertDatabaseHas('spin_history', ['user_id' => $user->id, 'game_name' => 'PORTAL 2 Lower']);
+    }
+
     public function test_spin_flashes_a_reel_that_lands_on_the_winner(): void
     {
         $user = User::factory()->create();

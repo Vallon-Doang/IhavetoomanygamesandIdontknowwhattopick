@@ -19,9 +19,10 @@ class UserController extends Controller
             ->withCount(['userGames', 'spinHistory'])
             ->when($search !== '', function ($query) use ($search): void {
                 $escaped = '%'.str_replace(['%', '_'], ['\%', '\_'], $search).'%';
+                // Case-insensitive name/email search across MySQL/PostgreSQL/SQLite.
                 $query->where(fn ($q) => $q
-                    ->where('name', 'like', $escaped)
-                    ->orWhere('email', 'like', $escaped));
+                    ->whereLike('name', $escaped)
+                    ->orWhereLike('email', $escaped));
             })
             ->with('steamAccount')
             ->orderBy('name')

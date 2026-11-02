@@ -43,6 +43,21 @@ from a fresh Git clone.
 Required PHP extensions: `pdo_mysql`, `mbstring`, `openssl`, `tokenizer`, `xml`, `ctype`,
 `json`, `bcmath`, `fileinfo`, `curl`, `dom`, `zip`.
 
+> Tests and the seeded demo flow run entirely on SQLite in-memory via
+> `php artisan test`, so no local MySQL is needed for CI.
+
+## Production deployment (Vercel)
+
+GameSpin can run on **Vercel** as a container-backed Function on
+FrankenPHP (PHP 8.4). Community post images then live in Cloudflare R2 and
+data in Neon PostgreSQL.
+
+See [`DEPLOYMENT.md`](DEPLOYMENT.md) for the full walkthrough — including the
+`Dockerfile`, `Caddyfile`, `vercel.json` and the environment variable
+reference. The repository ships with all of them, so a `vercel deploy` just
+needs the Neon + R2 + Steam credentials set as Vercel environment variables
+(never committed).
+
 ## Fresh-clone installation
 
 > For step-by-step setup on a brand-new machine (Windows-first, plus Linux), see

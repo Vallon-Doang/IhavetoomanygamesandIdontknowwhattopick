@@ -10,7 +10,7 @@ class SpinHistorySeeder extends Seeder
 {
     public function run(): void
     {
-        $member = User::where('email', 'member@gamespin.test')->first();
+        $member = User::where('email', config('demo.member.email'))->first();
 
         if (! $member || $member->spinHistory()->exists()) {
             return;
